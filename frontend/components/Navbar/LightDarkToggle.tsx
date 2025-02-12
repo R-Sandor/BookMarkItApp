@@ -29,7 +29,8 @@ export default function LightDarkToggle() {
 
   return (
     <div className="float-left text-center items-center mr-5 ">
-      <button className="btn" data-testid="light-dark" onClick={changeTheme}>
+      <button className="btn" data-testid="light-dark" onClick={changeTheme}
+                title = { theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode" } >
         <i className="bi bi-lamp-fill"></i>
       </button>
     </div>

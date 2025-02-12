@@ -39,7 +39,7 @@ export default function FilePicker({ setUpload, setFile }: FilePickerProps) {
     return <div>Error...</div>;
   }
   return (
-    <button className="btn btn-outline-info" onClick={() => openFilePicker()}>
+    <button className="btn btn-outline-info" onClick={() => openFilePicker()} title = "Import Bookmarks">
       <i className="bi bi-arrow-bar-up"> Upload File</i>
     </button>
   );
