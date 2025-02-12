@@ -1,5 +1,6 @@
 "use client";
 
+
 import api from "@/api/Api";
 import BookmarkAction from "@/types/Bookmarks/BookmarkAction";
 import UseAuth from "@components/UseAuth";
@@ -13,18 +14,18 @@ import {
   useState,
   useMemo,
 } from "react";
-
 interface ProviderProps {
   fetchedBookmarks: Bookmark[];
   loading: boolean;
 }
+
 export const BookmarkContext = createContext<ProviderProps>({
   fetchedBookmarks: [],
   loading: true,
 });
 
 export const BookmarkDispatchContext = createContext<Dispatch<BookmarkAction>>(
-  () => {},
+  () => {}
 );
 
 export function useBookmarks() {
@@ -45,11 +46,14 @@ export function BookmarkProvider({
   const userAuth = UseAuth();
 
   useEffect(() => {
-    if (userAuth && bookmarks.length == 0) {
-      api.getAllBookmarks().then((resp) => {
-        dispatch({ type: "add", bookmarks: resp.data as Bookmark[] });
-        setIsLoading(false);
-      });
+    if (userAuth && bookmarks.length === 0) {
+      setIsLoading(true); 
+      api
+        .getAllBookmarks()
+        .then((resp) => {
+          dispatch({ type: "add", bookmarks: resp.data as Bookmark[] });
+        })
+        .finally(() => setIsLoading(false));
     }
   }, [bookmarks.length, userAuth]);
 
@@ -64,7 +68,7 @@ export function BookmarkProvider({
 
   const value = useMemo(
     () => ({ fetchedBookmarks: bookmarks, loading: isLoading }),
-    [bookmarks, isLoading],
+    [bookmarks, isLoading]
   );
 
   return (
@@ -86,7 +90,7 @@ function bookmarkReducer(bookmarkList: Bookmark[], action: BookmarkAction) {
         const id = parseInt(action.bookmarkId.toString());
         api.deleteBookmarkById(id);
       }
-      return [...bookmarkList.filter((b) => b.id !== action.bookmarkId)];
+      return bookmarkList.filter((b) => b.id !== action.bookmarkId);
     }
     case "reset": {
       return [];

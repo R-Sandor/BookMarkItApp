@@ -5,6 +5,19 @@ import axios from "axios";
 const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL + "/api";
 
 let failCount = 0;
+export interface PaginatedBookmarkReq {
+  page: number;
+  size: number;
+}
+export interface Bookmark {
+  id: number;
+  title: string;
+  url: string;
+}
+export interface PaginatedBookmarkRes {
+  bookmarks: Bookmark[];
+  total: number;
+}
 
 export const instance = axios.create({
   withCredentials: true,
@@ -38,7 +51,7 @@ instance.interceptors.response.use(
       failCount++;
       api.refreshToken(user!.refreshToken);
     } else {
-      // propogate the error.
+      // propagate the error.
       return error;
     }
   },
@@ -68,6 +81,12 @@ const api = {
   // Get all bookmarks.
   getAllBookmarks() {
     return this.execute("GET", "bookmarks", null, {});
+  },
+  // Get paginated bookmarks.
+  getPaginatedBookmarks(req: PaginatedBookmarkReq) {
+    return instance.get<PaginatedBookmarkRes>("bookmarks", {
+      params: { page: req.page, size: req.size },
+    });
   },
   // Delete all bookmarks.
   removeAllBookmarks() {
@@ -111,7 +130,6 @@ const api = {
   addBookmarks(bkmks: NewBookmarkRequest[]) {
     return instance.post("bookmark/addBookmarks", bkmks);
   },
-
   // Adds a tag to an existing bookmark by bookmark Id with just string title of tag.
   addBookmarkTag(bkmkId: number, title: string) {
     return instance.post(`bookmark/${bkmkId}/tag?tag=${title}`);
