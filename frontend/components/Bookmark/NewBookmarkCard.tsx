@@ -20,17 +20,14 @@ import { AxiosError, AxiosResponse } from "axios";
 import { ScrapableNewBookmarkToggle } from "./ScrapableToggle";
 
 async function makeNewBookmark(createBmk: Bookmark): Promise<Bookmark> {
-  let newBkmkRequest: NewBookmarkRequest;
-  newBkmkRequest = {
+  let newBkmkRequest: NewBookmarkRequest = {
     title: createBmk.title,
     url: createBmk.url,
     tagIds: [],
     scrapable: createBmk.scrapable,
   };
   console.log(createBmk.scrapable);
-  let tagTitles: string[] = createBmk.tags.map((t) => {
-    return t.title;
-  });
+  let tagTitles: string[] = createBmk.tags.map((t) => t.title);
 
   await api.addAllTag(tagTitles).then((response) => {
     let respTags: Tag[] = response.data;
@@ -55,16 +52,27 @@ async function makeNewBookmark(createBmk: Bookmark): Promise<Bookmark> {
             theme: "colored",
           });
         }
-
         return;
       }
       if (!(response instanceof AxiosError)) {
-        console.log(response.data.scrapable);
+        // Update the bookmark with the response data
         createBmk.id = response.data.id;
         createBmk.tags = response.data.tags;
         createBmk.screenshotUrl = response.data.screenshotUrl;
         createBmk.scrapable = response.data.scrapable;
         createBmk.title = response.data.title;
+
+        // Show a green success toast for a successful add
+        toast.success("Bookmark added successfully!", {
+          position: "bottom-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+        });
       }
     });
   return createBmk;
@@ -95,10 +103,8 @@ export default function NewBookmarkCard() {
     submittedBmk: NewBookmarkForm,
     actions: any,
   ) => {
-    // get the the last inputed string and all the tags already entered.
-    let tags: Tag[] = strTags.map((t) => {
-      return { title: t, id: -1 };
-    });
+    // Get the last inputted string and all the tags already entered.
+    let tags: Tag[] = strTags.map((t) => ({ title: t, id: -1 }));
     if (tagInput) {
       tags.push({ title: tagInput, id: -1 });
     }
@@ -112,10 +118,12 @@ export default function NewBookmarkCard() {
       scrapable: isScrapable,
     };
 
-    actions.resetForm({ newcard }, setStrTags([]), setTagInput(""));
+    actions.resetForm({ newcard });
+    setStrTags([]);
+    setTagInput("");
     let retBkmk = await makeNewBookmark(newBkmk);
-    // if adding the bookmark was successful.
-    if (retBkmk.id != -1) {
+    // If adding the bookmark was successful, dispatch actions.
+    if (retBkmk.id !== -1) {
       retBkmk.tags.forEach((t) => {
         let tAct: TagAction = {
           type: "add",
@@ -146,7 +154,7 @@ export default function NewBookmarkCard() {
     const { key } = e;
     const trimmedInput = tagInput.trim();
     if (
-      // add tag via space bar or enter
+      // Add tag via space bar or enter
       (key === "Enter" || key === "Space" || key === " ") &&
       trimmedInput.length &&
       !strTags.includes(trimmedInput)
@@ -156,8 +164,7 @@ export default function NewBookmarkCard() {
       values.tagTitles = strTags.concat(trimmedInput);
       setTagInput("");
     }
-    // user hits backspace and the user has input field of 0
-    // then pop the last tag only if there is one.
+    // If backspace is pressed on an empty input field, remove the last tag.
     if (key === "Backspace" && !tagInput.length && strTags.length) {
       e.preventDefault();
       const tagsCopy = [...strTags];

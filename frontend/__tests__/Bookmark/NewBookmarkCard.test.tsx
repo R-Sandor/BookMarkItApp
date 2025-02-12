@@ -57,7 +57,7 @@ describe("Fields logic", () => {
     await user.click(toggle);
     expect(submit).not.toBeDisabled();
 
-    // fields should be populated
+    // Fields should be populated
     expect(url).toHaveValue("https://foodnetwork.com");
 
     const axiosMock = new MockAdapter(instance);
@@ -103,7 +103,7 @@ describe("Fields logic", () => {
 
     await user.click(submit);
 
-    // if everything submitted correctly then it should be empty input field.
+    // If submitted correctly, the fields should be reset.
     expect(url).toHaveValue("");
     expect(tags).toHaveValue("");
     expect(submit).toBeDisabled();
@@ -171,7 +171,7 @@ describe("Fields logic", () => {
     await user.type(tags, "food");
     expect(submit).not.toBeDisabled();
 
-    // fields should be populated
+    // Fields should be populated
     expect(url).toHaveValue("https://foodnetwork.com");
 
     const axiosMock = new MockAdapter(instance);
@@ -226,7 +226,7 @@ describe("Fields logic", () => {
 
     await user.click(submit);
 
-    // if everything submitted correctly then it should be empty input field.
+    // If submitted correctly, the fields should be reset.
     expect(url).toHaveValue("");
     expect(tags).toHaveValue("");
     expect(submit).toBeDisabled();
@@ -274,5 +274,79 @@ describe("Tags Operations", () => {
     await populateTags(["Tag1", "Tag2"], user);
     hitKey(tags, "Backspace", "Backspace", 8, 8);
     expect(screen.queryByTestId("Tag2")).toEqual(null);
+  });
+});
+
+describe("Success Toast", () => {
+  it("displays a green success toast when bookmark is added successfully", async () => {
+    render(
+      <div data-bs-theme="dark" className="row pt-3">
+        <div className="col-6 col-sm-12 col-md-12 col-lg-4">
+          <NewBookmarkCard />
+        </div>
+      </div>,
+    );
+
+    const submit = screen.getByText("Submit");
+    const tagsInput = screen.getByPlaceholderText("Enter a tag");
+    const urlInput = screen.getByPlaceholderText(/discover/i);
+
+    // Type in the URL (it will be prefixed with "https://")
+    await user.type(urlInput, "example.com");
+    expect(urlInput).toHaveValue("https://example.com");
+
+    // Type a tag and add it
+    await user.type(tagsInput, "testtag");
+    await user.type(tagsInput, "{enter}");
+
+    // Setup axios mocks for API calls
+    const axiosMock = new MockAdapter(instance);
+    const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL;
+    const tagsAPI = SERVER_URL + "/api/tags";
+    const bookmarkAPI = SERVER_URL + "/api/bookmark";
+
+    const expectedResult = [
+      {
+        id: 1,
+        title: "testtag",
+        bookmarks: [],
+      },
+    ];
+
+    const expectedBookmark: Bookmark = {
+      id: 1,
+      title: "example.com",
+      url: "https://example.com",
+      tags: [
+        {
+          id: 1,
+          title: "testtag",
+        },
+      ],
+      screenshotUrl: "",
+      scrapable: true,
+    };
+
+    axiosMock.onPost(tagsAPI, ["testtag"]).reply(() => {
+      return [200, expectedResult];
+    });
+
+    axiosMock
+      .onPost(bookmarkAPI, {
+        title: "https://example.com",
+        url: "https://example.com",
+        tagIds: [1],
+        scrapable: true,
+      })
+      .reply(() => {
+        return [200, expectedBookmark];
+      });
+
+    await user.click(submit);
+
+    // Wait for the success toast to appear
+    expect(
+      await screen.findByText("Bookmark added successfully!")
+    ).toBeInTheDocument();
   });
 });
